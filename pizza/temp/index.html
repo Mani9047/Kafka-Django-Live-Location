@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kafka Messages with Google Map</title>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB2Nc8a3Qg4IG__s_TOrDU0m1M8ka2-njI"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+          
+            const websocket = new WebSocket("ws://127.0.0.1:8000/ws/");
+            let map;
+            let markers = [];
+
+            //  Google Map
+            function initMap() {
+                const defaultLocation = { lat: 0, lng: 0 };
+                map = new google.maps.Map(document.getElementById("map"), {
+                    zoom: 2,
+                    center: defaultLocation,
+                });
+            }
+
+            // Add marker to the map
+            function addMarker(latitude, longitude) {
+                const location = { lat: latitude, lng: longitude };
+                const marker = new google.maps.Marker({
+                    position: location,
+                    map: map,
+                });
+                markers.push(marker);
+
+                // Re-center the map to the latest marker
+                map.setCenter(location);
+                map.setZoom(8); // Adjust zoom level as needed
+            }
+
+            websocket.onopen = () => {
+                console.log("WebSocket connected");
+                initMap();
+            };
+
+            websocket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                console.log("Message received:", data);
+
+                // Append data to the message list
+                const messageList = document.getElementById("messages");
+                const messageItem = document.createElement("li");
+                messageItem.textContent = `Latitude: ${data.latitude}, Longitude: ${data.longitude}`;
+                messageList.appendChild(messageItem);
+
+                // Add marker to Google Map
+                if (data.latitude && data.longitude) {
+                    addMarker(data.latitude, data.longitude);
+                }
+            };
+
+            websocket.onerror = (error) => {
+                console.error("WebSocket error:", error);
+            };
+
+            websocket.onclose = () => {
+                console.log("WebSocket connection closed");
+            };
+        });
+    </script>
+    <style>
+
+        #map {
+            width: 100%;
+            height: 500px;
+            margin-top: 20px;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            text-align: center;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Real-Time Kafka Messages with Google Map</h1>
+    <ul id="messages" hidden="hidden">
+        <!-- Kafka messages  -->
+    </ul>
+    <div id="map"></div>
+</body>
+</html>
